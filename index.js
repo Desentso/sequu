@@ -139,12 +139,14 @@ const DEFAULT_OPTIONS = {
   async: true,
   waitTime: 100,
   retryWaitTime: 2000,
+  randomWaitTime: false, // int, [min, max]
   continueParallel: false,
   maxRetries: 5,
   loggingEnabled: false,
   log(msg) {if (this.loggingEnabled) {console.log(msg)}},
   // other possible options
   // errorWaitTime: error => int
+  // waitTime: params => int
   // logError: (func, offset, params, err) => void
   // logSuccess: (func, offset, params, response) => void
   // logFailure: (func, offset, params) => void
