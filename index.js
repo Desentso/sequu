@@ -17,11 +17,11 @@ const getParams = params => (
 
 
 const loopItems = (func, data, options, resolve) => {
-  const logFailure = (offset, params) => {
+  const logFailure = (offset, params, err) => {
     if (options.logFailure) {
-      options.logFailure(func, offset, params)
+      options.logFailure(func, offset, params, err)
     } else {
-      options.log(`${func.name} failed for params: ${JSON.stringify(params)}, offset: ${offset}`)
+      options.log(`${func.name} failed for params: ${JSON.stringify(params)}, offset: ${offset}, err: ${err}`)
     }
   }
 
@@ -63,7 +63,6 @@ const loopItems = (func, data, options, resolve) => {
   }
 
   const handleFail = (offset, error) => {
-    logError(offset, data[offset], err)
     const hash = getHash(data[offset])
 
     if (!(hash in retries)) {
@@ -73,13 +72,13 @@ const loopItems = (func, data, options, resolve) => {
     retries[hash] += 1
     
     if (retries[hash] <= options.maxRetries) {
-      
+      logError(offset, data[offset], error)
       retry(offset)
-      if (options.continueParallel) {
+      if (options.continueParallel && !done[offset + 1]) {
         next(offset + 1)
       }
     } else {
-      logFailure(offset, data[offset])
+      logFailure(offset, data[offset], error)
       setDone(offset)
       next(offset + 1)
     }
@@ -151,7 +150,7 @@ const DEFAULT_OPTIONS = {
   // logFailure: (func, offset, params) => void
 }
 
-const call = (functionToCall, options={}) => data => {
+const sequential = (functionToCall, options={}) => data => {
   const mergedOptions = {
     ...DEFAULT_OPTIONS,
     ...options
@@ -162,4 +161,4 @@ const call = (functionToCall, options={}) => data => {
   })
 } 
 
-module.exports = call
+module.exports = sequential
