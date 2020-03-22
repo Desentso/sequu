@@ -73,6 +73,116 @@ describe("Sequential async", () => {
     })
   })
 
+  it("respects random wait time", async () => {
+    jest.useFakeTimers()
+
+    const mockMath = Object.create(global.Math)
+    mockMath.random = () => 1
+    global.Math = mockMath
+
+    const min = 100
+    const max = 200
+    const callSequentially = sequential(testFuncNoTimeout, {randomWaitTime: [min, max]})
+
+    const callSequentialFunc = callSequentially([1, 2, 3])
+
+    expect(setTimeout).toHaveBeenCalledTimes(0)
+
+    await advanceTimers(max)
+    expect(setTimeout).toHaveBeenCalledTimes(1)
+
+    await advanceTimers(max)
+    expect(setTimeout).toHaveBeenCalledTimes(2)
+
+    await advanceTimers(max)
+    expect(setTimeout).toHaveBeenCalledTimes(3)
+
+    callSequentialFunc.then(response => {
+      expect(response).toEqual([1, 2, 3])
+    })
+  })
+
+  it("respects random wait time as boolean", async () => {
+    jest.useFakeTimers()
+
+    const mockMath = Object.create(global.Math)
+    mockMath.random = () => 1
+    global.Math = mockMath
+
+    const min = 100 // defaults when using boolean
+    const max = 1000 // defaults when using boolean
+    const callSequentially = sequential(testFuncNoTimeout, {randomWaitTime: true})
+
+    const callSequentialFunc = callSequentially([1, 2, 3])
+
+    expect(setTimeout).toHaveBeenCalledTimes(0)
+
+    await advanceTimers(max)
+    expect(setTimeout).toHaveBeenCalledTimes(1)
+
+    await advanceTimers(max)
+    expect(setTimeout).toHaveBeenCalledTimes(2)
+
+    await advanceTimers(max)
+    expect(setTimeout).toHaveBeenCalledTimes(3)
+
+    callSequentialFunc.then(response => {
+      expect(response).toEqual([1, 2, 3])
+    })
+  })
+
+  it("respects wait time function", async () => {
+    jest.useFakeTimers()
+
+    const waitTime = jest.fn(params => 500)
+    const callSequentially = sequential(testFuncNoTimeout, {waitTime})
+
+    const callSequentialFunc = callSequentially([1, 2, 3])
+
+    expect(setTimeout).toHaveBeenCalledTimes(0)
+
+    await advanceTimers(500)
+    expect(setTimeout).toHaveBeenCalledTimes(1)
+
+    await advanceTimers(500)
+    expect(setTimeout).toHaveBeenCalledTimes(2)
+
+    await advanceTimers(500)
+    expect(setTimeout).toHaveBeenCalledTimes(3)
+
+    expect(waitTime).toHaveBeenCalledTimes(3)
+
+    callSequentialFunc.then(response => {
+      expect(response).toEqual([1, 2, 3])
+    })
+  })
+
+  it("respects default wait time if function returns falsy", async () => {
+    jest.useFakeTimers()
+
+    const waitTime = jest.fn(params => undefined)
+    const callSequentially = sequential(testFuncNoTimeout, {waitTime})
+
+    const callSequentialFunc = callSequentially([1, 2, 3])
+
+    expect(setTimeout).toHaveBeenCalledTimes(0)
+
+    await advanceTimers(100)
+    expect(setTimeout).toHaveBeenCalledTimes(1)
+
+    await advanceTimers(100)
+    expect(setTimeout).toHaveBeenCalledTimes(2)
+
+    await advanceTimers(100)
+    expect(setTimeout).toHaveBeenCalledTimes(3)
+
+    expect(waitTime).toHaveBeenCalledTimes(3)
+
+    callSequentialFunc.then(response => {
+      expect(response).toEqual([1, 2, 3])
+    })
+  })
+
   it("respects retryWaitTime", async () => {
     jest.useFakeTimers()
 
@@ -101,6 +211,149 @@ describe("Sequential async", () => {
 
     await advanceTimers(100)
     expect(setTimeout).toHaveBeenCalledTimes(5)
+
+    callSequentialFunc.then(response => {
+      expect(response).toEqual([])
+    })
+  })
+
+  it("respects random retry wait time", async () => {
+    jest.useFakeTimers()
+
+    const mockMath = Object.create(global.Math)
+    mockMath.random = () => 1
+    global.Math = mockMath
+
+    const min = 100 
+    const max = 500
+    const callSequentially = sequential(testFuncNoTimeout, {randomRetryWaitTime: [min, max]})
+
+    const callSequentialFunc = callSequentially([5])
+
+    expect(setTimeout).toHaveBeenCalledTimes(0)
+
+    await advanceTimers(max)
+    expect(setTimeout).toHaveBeenCalledTimes(2)
+
+    await advanceTimers(max)
+    expect(setTimeout).toHaveBeenCalledTimes(3)
+
+    await advanceTimers(max)
+    expect(setTimeout).toHaveBeenCalledTimes(4)
+
+    await advanceTimers(max)
+    expect(setTimeout).toHaveBeenCalledTimes(5)
+
+    callSequentialFunc.then(response => {
+      expect(response).toEqual([])
+    })
+  })
+
+  it("respects random retry wait time when using boolean", async () => {
+    jest.useFakeTimers()
+
+    const mockMath = Object.create(global.Math)
+    mockMath.random = () => 0
+    global.Math = mockMath
+
+    const min = 100 // Default
+    const max = 1000 // Default
+    const mockTestFunc = jest.fn(i => new Promise((resolve, reject) => {
+      if (i % 5 === 0) {
+        reject(new Error("Divisible by 5, this is bad"))
+      }
+      resolve(i)
+    }))
+
+    const callSequentially = sequential(mockTestFunc, {randomRetryWaitTime: true})
+
+    const callSequentialFunc = callSequentially([5])
+
+    jest.runOnlyPendingTimers()
+    await flushPromises()
+    expect(mockTestFunc).toHaveBeenCalledTimes(1)
+
+    await advanceTimers(min)
+    expect(mockTestFunc).toHaveBeenCalledTimes(2)
+
+    await advanceTimers(min)
+    expect(mockTestFunc).toHaveBeenCalledTimes(3)
+
+    await advanceTimers(min)
+    expect(mockTestFunc).toHaveBeenCalledTimes(4)
+
+    await advanceTimers(min)
+    expect(mockTestFunc).toHaveBeenCalledTimes(5)
+
+    callSequentialFunc.then(response => {
+      expect(response).toEqual([])
+    })
+  })
+
+  it("respects retryWaitTime function", async () => {
+    jest.useFakeTimers()
+
+    const retryWaitTimeFunc = jest.fn((err, params) => 200)
+    const mockTestFunc = jest.fn(i => new Promise((resolve, reject) => {
+      if (i % 5 === 0) {
+        reject(new Error("Divisible by 5, this is bad"))
+      }
+      resolve(i)
+    }))
+    const callSequentially = sequential(mockTestFunc, {retryWaitTime: retryWaitTimeFunc})
+
+    const callSequentialFunc = callSequentially([5])
+
+    jest.runOnlyPendingTimers()
+    await flushPromises()
+    expect(mockTestFunc).toHaveBeenCalledTimes(1)
+
+    await advanceTimers(200)
+    expect(mockTestFunc).toHaveBeenCalledTimes(2)
+
+    await advanceTimers(200)
+    expect(mockTestFunc).toHaveBeenCalledTimes(3)
+
+    await advanceTimers(200)
+    expect(mockTestFunc).toHaveBeenCalledTimes(4)
+
+    await advanceTimers(200)
+    expect(mockTestFunc).toHaveBeenCalledTimes(5)
+
+    callSequentialFunc.then(response => {
+      expect(response).toEqual([])
+    })
+  })
+
+  it("uses default retry wait time if func returns falsey", async () => {
+    jest.useFakeTimers()
+
+    const retryWaitTimeFunc = jest.fn((err, params) => undefined)
+    const mockTestFunc = jest.fn(i => new Promise((resolve, reject) => {
+      if (i % 5 === 0) {
+        reject(new Error("Divisible by 5, this is bad"))
+      }
+      resolve(i)
+    }))
+    const callSequentially = sequential(mockTestFunc, {retryWaitTime: retryWaitTimeFunc})
+
+    const callSequentialFunc = callSequentially([5])
+
+    jest.runOnlyPendingTimers()
+    await flushPromises()
+    expect(mockTestFunc).toHaveBeenCalledTimes(1)
+
+    await advanceTimers(2000)
+    expect(mockTestFunc).toHaveBeenCalledTimes(2)
+
+    await advanceTimers(2000)
+    expect(mockTestFunc).toHaveBeenCalledTimes(3)
+
+    await advanceTimers(2000)
+    expect(mockTestFunc).toHaveBeenCalledTimes(4)
+
+    await advanceTimers(2000)
+    expect(mockTestFunc).toHaveBeenCalledTimes(5)
 
     callSequentialFunc.then(response => {
       expect(response).toEqual([])

@@ -1,20 +1,9 @@
-
-const getHash = data => {
-  return JSON.stringify(data)
-}
-
-const callInMs = (func, waitTime) => (...args) => {
-  setTimeout(() => {
-    func(...args)
-  }, waitTime)
-}
-
-const getParams = params => (
-  Array.isArray(params)
-    ? params
-    : [params]
-)
-
+const {
+  getHash,
+  getRandomIn,
+  callInMs,
+  getParams,
+} = require("./utils")
 
 const loopItems = (func, data, options, resolve) => {
   const logFailure = (offset, params, err) => {
@@ -58,12 +47,13 @@ const loopItems = (func, data, options, resolve) => {
   const handleSuccess = (offset, response) => {
     returnedData.push(response)
     setDone(offset)
-    next(offset + 1)
+    next(data[offset + 1])(offset + 1)
     logSuccess(offset, data[offset], response)
   }
 
   const handleFail = (offset, error) => {
-    const hash = getHash(data[offset])
+    const params = data[offset]
+    const hash = getHash(params)
 
     if (!(hash in retries)) {
       retries[hash] = 0
@@ -72,15 +62,15 @@ const loopItems = (func, data, options, resolve) => {
     retries[hash] += 1
     
     if (retries[hash] <= options.maxRetries) {
-      logError(offset, data[offset], error)
-      retry(offset)
+      logError(offset, params, error)
+      retry(error, params)(offset)
       if (options.continueParallel && !done[offset + 1]) {
-        next(offset + 1)
+        next(data[offset + 1])(offset + 1)
       }
     } else {
-      logFailure(offset, data[offset], error)
+      logFailure(offset, params, error)
       setDone(offset)
-      next(offset + 1)
+      next(data[offset + 1])(offset + 1)
     }
   }
 
@@ -128,25 +118,38 @@ const loopItems = (func, data, options, resolve) => {
     : callItemSync
   
 
-  const next = callInMs(callItem, options.waitTime)
-  const retry = callInMs(callItem, options.retryWaitTime)
-
+  const next = (params) => typeof options.waitTime === "function"
+    ? callInMs(callItem, options.waitTime(params) || DEFAULT_WAIT_TIME) 
+    : options.randomWaitTime
+      ? Array.isArray(options.randomWaitTime)
+        ? callInMs(callItem, getRandomIn(options.randomWaitTime[0], options.randomWaitTime[1]))
+        : callInMs(callItem, getRandomIn(100, 1000))
+      : callInMs(callItem, options.waitTime)
+  const retry = (err, params) => typeof options.retryWaitTime === "function"
+    ? callInMs(callItem, options.retryWaitTime(err, params) || DEFAULT_RETRY_WAIT_TIME) 
+    : options.randomRetryWaitTime
+      ? Array.isArray(options.randomRetryWaitTime)
+        ? callInMs(callItem, getRandomIn(options.randomRetryWaitTime[0], options.randomRetryWaitTime[1]))
+        : callInMs(callItem, getRandomIn(100, 1000))
+      : callInMs(callItem, options.retryWaitTime)
 
   callItem(0)
 }
 
+const DEFAULT_WAIT_TIME = 100
+const DEFAULT_RETRY_WAIT_TIME = 2000
+
 const DEFAULT_OPTIONS = {
-  async: true,
-  waitTime: 100,
-  retryWaitTime: 2000,
-  randomWaitTime: false, // int, [min, max]
-  continueParallel: false,
-  maxRetries: 5,
-  loggingEnabled: false,
-  log(msg) {if (this.loggingEnabled) {console.log(msg)}},
+  async: true, // bool
+  waitTime: DEFAULT_WAIT_TIME, // int, func
+  retryWaitTime: DEFAULT_RETRY_WAIT_TIME, // int, func
+  randomWaitTime: false, // bool, [min, max]
+  randomRetryWaitTime: false, // bool, [min, max]
+  continueParallel: false, // bool
+  maxRetries: 5, // int
+  loggingEnabled: false, // bool
+  log(msg) {if (this.loggingEnabled) {console.log(msg)}}, // str => void
   // other possible options
-  // errorWaitTime: error => int
-  // waitTime: params => int
   // logError: (func, offset, params, err) => void
   // logSuccess: (func, offset, params, response) => void
   // logFailure: (func, offset, params) => void
