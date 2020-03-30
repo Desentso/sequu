@@ -10,9 +10,20 @@ Sequu is a package that makes calling a function sequentially easier. It include
 - Logging support
 
 <br>
+
+---
+
 <br>
 
-# Example
+- [Example](#example)
+- [Documentation](#documentation)
+  - [API](#api)
+  - [Options](#options)
+
+<br>
+<br>
+
+## Example
 
 ```javascript
 const sequu = require("sequu")
