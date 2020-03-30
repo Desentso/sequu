@@ -1,6 +1,16 @@
 # Sequu
-Sequu is a package to make calling a function sequentially easier. It includes thing like retries and custom wait times. For example let's say you need to fetch data with 100 different parameters, and you want to not get e.g. rate-limited or otherwise wait a bit before calling the next function. You can use Sequu to call the function sequentially with your data and wait 100 ms everytyime in between, and let's say 2 of your calls fail, Sequu will automatically retry those.
+Sequu is a package that makes calling a function sequentially easier. It includes thing like retries and custom wait times. For example let's say you need to fetch data with 100 different parameters, and you want to not get e.g. rate-limited or otherwise wait a bit before calling the next function. You can use Sequu to call the function sequentially with your data and wait 100 ms everytime in between, and let's say 2 of your calls fail, Sequu will automatically retry those.
 
+## Features
+- Async and sync support
+- Customizable wait times
+- Randomized wait times
+- Automatic retries
+- Customizable retries
+- Logging support
+
+<br>
+<br>
 
 # Example
 
@@ -25,6 +35,9 @@ callSequentially([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
   })
 ```
 
+<br>
+<br>
+
 # Documentation
 
 ## API
@@ -34,7 +47,7 @@ callSequentially([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
 > Func can be any function, if it's a synchronous function you should pass `async: false` in the options.
 
-#### Simple examples
+#### Examples
 ```javascript
 // Calls `fetch` with "https://example.com", "https://google.com" every 500 ms, and in case of failure waits 2000 ms, and retries maximum of three times
 const fetchSequentially = sequu(fetch, {waitTime: 500, retryWaitTime: 2000, maxRetries: 3})
@@ -52,6 +65,8 @@ logSequentially(["abc", "test", "123"])
     // For sync functions this will contain the responses as well
   })
 ```
+
+<br>
 
 ### Options
 
