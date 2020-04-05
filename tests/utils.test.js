@@ -3,7 +3,7 @@ const {
   getRandomIn,
   callInMs,
   getParams,
-} = require("../utils")
+} = require("../src/utils")
 
 describe("getHash", () => {
   it("valid for strings", () => {

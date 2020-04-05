@@ -155,7 +155,7 @@ const DEFAULT_OPTIONS = {
   // logFailure: (func, offset, params) => void
 }
 
-const sequential = (functionToCall, options={}) => data => {
+const sequu = (functionToCall, options={}) => data => {
   const mergedOptions = {
     ...DEFAULT_OPTIONS,
     ...options
@@ -166,4 +166,4 @@ const sequential = (functionToCall, options={}) => data => {
   })
 } 
 
-module.exports = sequential
+module.exports = sequu

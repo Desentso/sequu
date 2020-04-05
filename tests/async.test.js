@@ -1,4 +1,4 @@
-const sequential = require("../")
+const sequu = require("../src")
 
 const testFunc = i => {
   return new Promise((resolve, reject) => {
@@ -38,7 +38,7 @@ describe("Sequential async", () => {
   })
 
   it("returns function response correctly", async () => {
-    const callSequentially = sequential(testFunc, {waitTime: 10, retryWaitTime: 10})
+    const callSequentially = sequu(testFunc, {waitTime: 10, retryWaitTime: 10})
 
     const response = await callSequentially([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
@@ -48,7 +48,7 @@ describe("Sequential async", () => {
   it("respects the wait time", async () => {
     jest.useFakeTimers()
 
-    const callSequentially = sequential(testFuncNoTimeout, {waitTime: 100})
+    const callSequentially = sequu(testFuncNoTimeout, {waitTime: 100})
 
     const callSequentialFunc = callSequentially([1, 2, 3])
 
@@ -82,7 +82,7 @@ describe("Sequential async", () => {
 
     const min = 100
     const max = 200
-    const callSequentially = sequential(testFuncNoTimeout, {randomWaitTime: [min, max]})
+    const callSequentially = sequu(testFuncNoTimeout, {randomWaitTime: [min, max]})
 
     const callSequentialFunc = callSequentially([1, 2, 3])
 
@@ -111,7 +111,7 @@ describe("Sequential async", () => {
 
     const min = 100 // defaults when using boolean
     const max = 1000 // defaults when using boolean
-    const callSequentially = sequential(testFuncNoTimeout, {randomWaitTime: true})
+    const callSequentially = sequu(testFuncNoTimeout, {randomWaitTime: true})
 
     const callSequentialFunc = callSequentially([1, 2, 3])
 
@@ -135,7 +135,7 @@ describe("Sequential async", () => {
     jest.useFakeTimers()
 
     const waitTime = jest.fn(params => 500)
-    const callSequentially = sequential(testFuncNoTimeout, {waitTime})
+    const callSequentially = sequu(testFuncNoTimeout, {waitTime})
 
     const callSequentialFunc = callSequentially([1, 2, 3])
 
@@ -161,7 +161,7 @@ describe("Sequential async", () => {
     jest.useFakeTimers()
 
     const waitTime = jest.fn(params => undefined)
-    const callSequentially = sequential(testFuncNoTimeout, {waitTime})
+    const callSequentially = sequu(testFuncNoTimeout, {waitTime})
 
     const callSequentialFunc = callSequentially([1, 2, 3])
 
@@ -186,7 +186,7 @@ describe("Sequential async", () => {
   it("respects retryWaitTime", async () => {
     jest.useFakeTimers()
 
-    const callSequentially = sequential(testFuncNoTimeout, {retryWaitTime: 100})
+    const callSequentially = sequu(testFuncNoTimeout, {retryWaitTime: 100})
 
     const callSequentialFunc = callSequentially([5])
 
@@ -226,7 +226,7 @@ describe("Sequential async", () => {
 
     const min = 100 
     const max = 500
-    const callSequentially = sequential(testFuncNoTimeout, {randomRetryWaitTime: [min, max]})
+    const callSequentially = sequu(testFuncNoTimeout, {randomRetryWaitTime: [min, max]})
 
     const callSequentialFunc = callSequentially([5])
 
@@ -265,7 +265,7 @@ describe("Sequential async", () => {
       resolve(i)
     }))
 
-    const callSequentially = sequential(mockTestFunc, {randomRetryWaitTime: true})
+    const callSequentially = sequu(mockTestFunc, {randomRetryWaitTime: true})
 
     const callSequentialFunc = callSequentially([5])
 
@@ -300,7 +300,8 @@ describe("Sequential async", () => {
       }
       resolve(i)
     }))
-    const callSequentially = sequential(mockTestFunc, {retryWaitTime: retryWaitTimeFunc})
+    
+    const callSequentially = sequu(mockTestFunc, {retryWaitTime: retryWaitTimeFunc})
 
     const callSequentialFunc = callSequentially([5])
 
@@ -335,7 +336,7 @@ describe("Sequential async", () => {
       }
       resolve(i)
     }))
-    const callSequentially = sequential(mockTestFunc, {retryWaitTime: retryWaitTimeFunc})
+    const callSequentially = sequu(mockTestFunc, {retryWaitTime: retryWaitTimeFunc})
 
     const callSequentialFunc = callSequentially([5])
 
@@ -363,7 +364,7 @@ describe("Sequential async", () => {
   it("retries correct amount of times", async () => {
     jest.useFakeTimers()
     const logErrorMock = jest.fn()
-    const callSequentially = sequential(
+    const callSequentially = sequu(
       testFuncNoTimeout, 
       {waitTime: 100, retryWaitTime: 100, maxRetries: 3, logError: logErrorMock}
     )
@@ -401,7 +402,7 @@ describe("Sequential async", () => {
       }
       resolve(i)
     }))
-    const callSequentially = sequential(
+    const callSequentially = sequu(
       mockTestFunc, 
       {waitTime: 100, retryWaitTime: 100, maxRetries: 3, continueParallel: true, logError: logErrorMock}
     )
@@ -433,7 +434,7 @@ describe("Sequential async", () => {
   
   it("calls logSuccess", async () => {
     const mockLogSuccess = jest.fn((func, offset, params, response) => {})
-    const callSequentially = sequential(testFunc, {waitTime: 10, logSuccess: mockLogSuccess})
+    const callSequentially = sequu(testFunc, {waitTime: 10, logSuccess: mockLogSuccess})
 
     const response = await callSequentially([1, 2, 3])
 
@@ -446,7 +447,7 @@ describe("Sequential async", () => {
 
   it("calls logFailure", async () => {
     const mockLogFailure = jest.fn((func, offset, params, err) => {})
-    const callSequentially = sequential(testFunc, {retryWaitTime: 10, logFailure: mockLogFailure})
+    const callSequentially = sequu(testFunc, {retryWaitTime: 10, logFailure: mockLogFailure})
 
     const response = await callSequentially([5])
 
@@ -461,7 +462,7 @@ describe("Sequential async", () => {
         resolve(c)
       })
     }
-    const callSequentially = sequential(testfuncMultipleParams, {waitTime: 10})
+    const callSequentially = sequu(testfuncMultipleParams, {waitTime: 10})
 
     const response = await callSequentially([[1,2,3], [4,5,6], [7,8,9]])
 
@@ -474,7 +475,7 @@ describe("Sequential async", () => {
         resolve(arr)
       })
     }
-    const callSequentially = sequential(testfuncArray, {waitTime: 10})
+    const callSequentially = sequu(testfuncArray, {waitTime: 10})
 
     const response = await callSequentially([[[1,2,3]], [[4,5,6]], [[7,8,9]]])
 
